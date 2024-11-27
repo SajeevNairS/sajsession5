@@ -2,9 +2,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
+import sys
+import os
+
+# Add the project root directory to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from model.mnist_model import MNISTNet
 from datetime import datetime
-import os
 
 def train():
     # Set device

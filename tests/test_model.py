@@ -1,5 +1,11 @@
 import pytest
 import torch
+import sys
+import os
+
+# Add the project root directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from model.mnist_model import MNISTNet
 from torchvision import datasets, transforms
 import torch.nn.functional as F
