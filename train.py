@@ -14,6 +14,7 @@ from datetime import datetime
 def train():
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     
     # Data loading
     transform = transforms.Compose([
@@ -29,8 +30,12 @@ def train():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
-    # Training
+    # Training for exactly 1 epoch
+    print("Starting training for 1 epoch...")
     model.train()
+    correct = 0
+    total = 0
+    
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -39,12 +44,22 @@ def train():
         loss.backward()
         optimizer.step()
         
+        # Calculate accuracy
+        _, predicted = torch.max(output.data, 1)
+        total += target.size(0)
+        correct += (predicted == target).sum().item()
+        
         if batch_idx % 100 == 0:
-            print(f'Batch {batch_idx}/{len(train_loader)}, Loss: {loss.item():.4f}')
+            current_acc = 100 * correct / total
+            print(f'Batch {batch_idx}/{len(train_loader)}, Loss: {loss.item():.4f}, Accuracy: {current_acc:.2f}%')
     
-    # Save model with timestamp
+    # Final training accuracy
+    final_acc = 100 * correct / total
+    print(f'\nTraining completed. Final accuracy: {final_acc:.2f}%')
+    
+    # Save model with timestamp and accuracy
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    save_path = f'models/mnist_model_{timestamp}.pth'
+    save_path = f'models/mnist_model_{timestamp}_acc{final_acc:.1f}.pth'
     os.makedirs('models', exist_ok=True)
     torch.save(model.state_dict(), save_path)
     return save_path

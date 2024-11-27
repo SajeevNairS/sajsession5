@@ -1,24 +1,43 @@
 # MNIST Classification with CI/CD Pipeline
 
-This project demonstrates a complete CI/CD pipeline for a machine learning project using PyTorch and GitHub Actions. It includes a simple convolutional neural network (CNN) for MNIST digit classification with automated testing, model validation, and deployment processes.
+This project demonstrates a complete CI/CD pipeline for a machine learning project using PyTorch and GitHub Actions. It includes a lightweight convolutional neural network (CNN) for MNIST digit classification with automated testing, model validation, and deployment processes.
+
+## Project Structure
+
+.
+├── .github/
+│ └── workflows/
+│ └── ml-pipeline.yml # CI/CD pipeline configuration
+├── model/
+│ ├── init.py
+│ └── mnist_model.py # Neural network architecture
+├── tests/
+│ └── test_model.py # Model validation tests
+├── train.py # Training script
+├── requirements.txt # Project dependencies
+└── .gitignore # Git ignore rules
 
 
 ## Model Architecture
-The model is a simple CNN with the following architecture:
-- Input Layer: Accepts 28x28 grayscale images
-- Conv Layer 1: 16 filters, 3x3 kernel, ReLU activation + MaxPool
-- Conv Layer 2: 32 filters, 3x3 kernel, ReLU activation + MaxPool
-- Fully Connected Layer 1: 1568 -> 128 units, ReLU activation
-- Output Layer: 128 -> 10 units (one for each digit)
+The model is an efficient CNN with the following architecture:
+- Input Layer: 28x28 grayscale images
+- Conv Layer 1: 4 filters, 3x3 kernel, BatchNorm, ReLU, MaxPool
+- Conv Layer 2: 8 filters, 3x3 kernel, BatchNorm, ReLU, MaxPool
+- Fully Connected Layer 1: 392 -> 16 units, ReLU
+- Output Layer: 16 -> 10 units (one for each digit)
+- Dropout (0.3) after each layer for regularization
+
+Total Parameters: 6,818 (well under the 25,000 parameter limit)
 
 ## Features
-- Automated model training pipeline
+- Single epoch training achieving >95% accuracy
 - Model validation checks:
   - Input shape verification (28x28)
-  - Parameter count validation (< 100,000)
+  - Parameter count validation
   - Output dimension check (10 classes)
-  - Model accuracy verification (> 80%)
-- Automated model versioning with timestamps
+  - Model accuracy verification
+- Automated model versioning with timestamps and accuracy
+- CPU-only PyTorch for wider compatibility
 - GitHub Actions integration for CI/CD
 
 ## Setup and Installation
@@ -34,6 +53,7 @@ bash
 git clone https://github.com/yourusername/your-repo-name.git
 cd your-repo-name
 
+
 2. Create and activate a virtual environment:
 
 bash
@@ -46,6 +66,7 @@ venv\Scripts\activate
 
 
 3. Install dependencies:
+
 bash
 pip install -r requirements.txt
 
@@ -55,6 +76,11 @@ pip install -r requirements.txt
 bash
 python train.py
 
+You'll see progress updates showing:
+- Current batch number
+- Loss value
+- Running accuracy
+- Final training accuracy
 
 5. Run tests:
 
@@ -63,67 +89,36 @@ pytest tests/
 
 
 ### GitHub Actions Pipeline
-The CI/CD pipeline automatically runs on every push to the repository. To use it:
-
-1. Fork this repository
-2. Enable GitHub Actions in your repository settings
-3. Push your changes to trigger the pipeline
-
-The pipeline will:
-1. Set up a Python environment
-2. Install dependencies
-3. Train the model
-4. Run validation tests
-5. Save the trained model as an artifact
+The CI/CD pipeline automatically runs on every push to the repository and performs:
+1. Environment setup with Python 3.8
+2. Installation of CPU-only PyTorch dependencies
+3. Single epoch model training
+4. Validation tests
+5. Model artifact storage
 
 ## Model Artifacts
-Trained models are saved with timestamps in the format:
+Trained models are saved with timestamps and accuracy in the format:
 
-mnist_model_YYYYMMDD_HHMMSS.pth
+mnist_model_YYYYMMDD_HHMMSS_acc95.0.pth
 
-You can find these:
-- Locally in the `models/` directory after training
-- In GitHub Actions artifacts after pipeline completion
+These can be found in:
+- `models/` directory (local training)
+- GitHub Actions artifacts (pipeline runs)
 
 ## Testing
-The project includes automated tests that verify:
+The automated tests verify:
 - Model architecture compliance
 - Input/output shape compatibility
-- Parameter count constraints
-- Model performance (accuracy > 80%)
-
-Run tests locally using:
-
-bash
-pytest tests/
-
-
-## Contributing
-1. Fork the repository
-2. Create your feature branch:
-
-bash
-git checkout -b feature/amazing-feature
-
-3. Commit your changes:
-
-bash
-git commit -m 'Add some amazing feature'
-
-4. Push to the branch:
-
-bash
-git push origin feature/amazing-feature
-
-5. Open a Pull Request
+- Parameter count (< 100,000)
+- Model performance (> 80% accuracy)
 
 ## Troubleshooting
-- If you encounter CUDA/GPU issues, ensure the model runs on CPU by default
-- For memory issues, reduce batch size in `train.py`
-- For test failures, check model accuracy and architecture constraints
+- If you encounter import errors, ensure you're in the project root directory
+- For memory issues, reduce batch size in `train.py` (currently 64)
+- All PyTorch operations run on CPU by default
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License
 
 ## Acknowledgments
 - MNIST Dataset: [MNIST Database](http://yann.lecun.com/exdb/mnist/)
