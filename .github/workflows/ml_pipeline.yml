@@ -51,97 +51,65 @@ jobs:
       run: |
         echo "Generating augmentation visualizations..."
         
-        # Create required directories
-        mkdir -p visualizations/augmentations
-        mkdir -p visualizations/augmented_samples
+        # Debug Python environment
+        echo "Python version:"
+        python --version
+        echo "Python path:"
+        echo $PYTHONPATH
+        echo "Current directory:"
+        pwd
+        echo "Directory contents:"
+        ls -la
         
-        # Create visualization script
-        echo "Creating visualization script..."
-        cat > viz_script.py << 'EOL'
-        #!/usr/bin/env python3
-        
+        # Create Python script for augmentations
+        cat > generate_augmentations.py << 'EOF'
         import os
         import sys
         import torch
+        import matplotlib
+        matplotlib.use('Agg')  # Use non-interactive backend
         from torchvision import datasets, transforms
         from utils.augmentation_viz import visualize_augmentations
-        
+
         def main():
             try:
-                print("Starting visualization generation...")
-                print(f"Current directory: {os.getcwd()}")
-                print(f"Python path: {sys.path}")
-                
-                # Create directories
+                # Setup directories
                 os.makedirs('visualizations/augmentations', exist_ok=True)
                 os.makedirs('visualizations/augmented_samples', exist_ok=True)
                 
-                # Get sample images
-                print("Loading MNIST dataset...")
+                # Get one sample image
                 transform = transforms.ToTensor()
                 dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+                sample_image = dataset[0][0]  # Just get the first image
                 
-                # Get samples of different digits
-                print("Selecting sample digits...")
-                samples = []
-                labels = []
-                seen_digits = set()
+                # Generate visualization for one digit
+                print(f"Generating augmentations for sample digit...")
+                visualize_augmentations(sample_image, num_samples=5, digit=0)
                 
-                for img, label in dataset:
-                    if label.item() not in seen_digits:
-                        samples.append(img)
-                        labels.append(label)
-                        seen_digits.add(label.item())
-                        print(f"Found digit {label.item()}")
-                        if len(seen_digits) == 5:
-                            break
-                
-                # Generate visualizations
-                print("Generating augmentations...")
-                for idx, (img, label) in enumerate(zip(samples, labels)):
-                    print(f"Processing digit {label.item()}...")
-                    visualize_augmentations(img, num_samples=5, digit=label.item())
-                
-                print("Visualization generation completed successfully")
                 return 0
                 
             except Exception as e:
-                print(f"Error during visualization generation: {str(e)}")
+                print(f"Error occurred: {str(e)}", file=sys.stderr)
                 import traceback
                 traceback.print_exc()
                 return 1
-        
+
         if __name__ == "__main__":
             sys.exit(main())
-        EOL
+        EOF
         
-        # Make script executable
-        chmod +x viz_script.py
+        # Run the script
+        echo "Running augmentation script..."
+        python generate_augmentations.py
         
-        # Run script with debug output
-        echo "Running visualization script..."
-        python -v viz_script.py
-        
-        # Check script exit status
-        if [ $? -ne 0 ]; then
-            echo "Visualization script failed!"
-            exit 1
-        fi
-        
-        # List generated files
+        # Check results
         echo "Checking generated files..."
-        if [ -d "visualizations/augmentations" ]; then
-            echo "Contents of visualizations/augmentations:"
-            ls -la visualizations/augmentations/
-        else
-            echo "augmentations directory not found!"
-        fi
-        
-        if [ -d "visualizations/augmented_samples" ]; then
-            echo "Contents of visualizations/augmented_samples:"
-            ls -la visualizations/augmented_samples/
-        else
-            echo "augmented_samples directory not found!"
+        find visualizations -type f -ls
+
+        # Display any error logs
+        if [ -f "error.log" ]; then
+          echo "Error log contents:"
+          cat error.log
         fi
     
     - name: Train model
