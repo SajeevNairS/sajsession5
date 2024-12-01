@@ -27,18 +27,19 @@ A PyTorch implementation of a lightweight CNN for MNIST digit classification, op
 ### Receptive Field
 - Progressive growth through layers
 - Final receptive field: 31×31 (covers entire input)
-- Layer-wise RF growth:
-  * Conv1: 3×3
-  * Conv2: 5×5
-  * Conv3: 7×7
-  * Conv4 + Pool4: 11×11
-  * Conv5 + Pool5: 15×15
-  * Conv6 + Pool6: 23×23
-  * Conv7 + Pool7: 31×31
+- Layer-wise RF growth documented in model architecture
 
 ## Training Setup
 
 ### Data Preprocessing
+```python
+transform = transforms.Compose([
+    transforms.Resize((28, 28)),
+    transforms.RandomRotation(degrees=5),
+    transforms.ToTensor(),
+    transforms.Normalize((0.1307,), (0.3081,))
+])
+```
 
 ### Training Configuration
 - Optimizer: SGD with momentum
@@ -51,35 +52,47 @@ A PyTorch implementation of a lightweight CNN for MNIST digit classification, op
   * Cosine annealing
 - Gradient clipping: 1.0
 
-### Model Features
-- Total Parameters: < 25,000
-- Efficient feature extraction
-- Progressive spatial reduction
-- Balanced parameter distribution
-- Light regularization (Dropout 0.15)
+## Testing and Verification
 
-## Visualization Tools
-The project includes tools for:
-1. Model architecture visualization
-2. Feature map visualization
-3. Training progress tracking
-4. Parameter count display
+### Automated Tests
+The project includes automated tests to verify:
+1. Parameter count (< 25,000)
+2. Model accuracy (≥ 95%)
+3. Model architecture
+4. Per-class performance
 
-## Usage
-
+### Running Tests Locally
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Run all tests
+python tests/test_model.py
 
-# Train model
-python train.py
+# Run with pytest
+pytest tests/test_model.py -v -s
+
+# View test summary
+cat test-summary.md
 ```
+
+### Test Artifacts
+- test-summary.md: Detailed test results
+- visualizations/: Feature maps and model architecture
+- models/: Saved model checkpoints
+
+### GitHub Actions
+Automated CI/CD pipeline that:
+- Verifies parameter count
+- Checks model accuracy
+- Generates test summary
+- Posts results as PR comments
+- Saves test artifacts
 
 ## Project Structure
 ```
 .
 ├── model/
 │   └── mnist_model.py     # Model architecture
+├── tests/
+│   └── test_model.py      # Test suite
 ├── visualizations/        # Generated visualizations
 ├── train.py              # Training script
 ├── requirements.txt      # Dependencies
@@ -91,13 +104,34 @@ python train.py
 - torchvision
 - numpy
 - matplotlib
+- pytest
 - Python 3.6+
 
-## Results
-- Target: >95% accuracy in one epoch
-- Parameters: ~24,000
-- Training time: Single CPU
+## Usage
+
+### Training
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Train model
+python train.py
 ```
+
+### Testing
+```bash
+# Run tests
+python tests/test_model.py
+
+# View results
+cat test-summary.md
+```
+
+## Results
+- Parameters: 18,694 (under 25K limit)
+- Accuracy: >95% in one epoch
+- Training time: Single CPU
+- Full test results in test-summary.md
 
 
 

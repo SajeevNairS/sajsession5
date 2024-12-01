@@ -1,0 +1,52 @@
+name: Model Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-md
+    
+    - name: Run model verification
+      id: model-test
+      run: |
+        echo "::set-output name=test-results::$(python tests/test_model.py)"
+    
+    - name: Create Test Summary
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const testResults = `${{ steps.model-test.outputs.test-results }}`;
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.name,
+            body: `## Model Test Results\n\n${testResults}`
+          });
+    
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results
+        path: |
+          models/
+          visualizations/
+          test-summary.md
