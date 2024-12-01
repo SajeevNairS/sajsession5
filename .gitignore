@@ -49,3 +49,7 @@ QNA_5/
 # OS
 .DS_Store
 Thumbs.db 
+
+# Allow augmentation images
+!visualizations/augmentations/**/*.png
+!visualizations/augmentations/**/*.md 
