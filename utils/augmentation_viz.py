@@ -10,6 +10,8 @@ def visualize_augmentations(image, num_samples=5):
         image: Original image tensor
         num_samples: Number of augmented samples to generate
     """
+    print("Starting augmentation visualization...")
+    
     # Define augmentations used in training
     augmentations = [
         ("Rotation", transforms.RandomRotation(degrees=5)),
@@ -21,6 +23,7 @@ def visualize_augmentations(image, num_samples=5):
         ]))
     ]
     
+    print("Saving original image...")
     # Save original image
     plt.figure(figsize=(4, 4))
     plt.imshow(image.squeeze(), cmap='gray')
@@ -29,11 +32,12 @@ def visualize_augmentations(image, num_samples=5):
     plt.savefig('visualizations/augmentations/original.png', bbox_inches='tight', dpi=150)
     plt.close()
     
+    print("Generating augmented samples...")
     # Generate and save augmented samples
     for aug_name, aug_transform in augmentations:
+        print(f"Processing {aug_name} augmentation...")
         plt.figure(figsize=(15, 3))
         
-        # Create multiple samples of same augmentation
         for i in range(num_samples):
             plt.subplot(1, num_samples, i+1)
             augmented = aug_transform(image)
@@ -42,10 +46,12 @@ def visualize_augmentations(image, num_samples=5):
             plt.axis('off')
         
         plt.tight_layout()
-        plt.savefig(f'visualizations/augmentations/{aug_name.lower()}_samples.png', 
-                   bbox_inches='tight', dpi=150)
+        save_path = f'visualizations/augmentations/{aug_name.lower()}_samples.png'
+        plt.savefig(save_path, bbox_inches='tight', dpi=150)
+        print(f"Saved {save_path}")
         plt.close()
     
+    print("Creating summary markdown...")
     # Create summary markdown
     with open('visualizations/augmentations/README.md', 'w') as f:
         f.write("# Data Augmentation Samples\n\n")
@@ -54,4 +60,7 @@ def visualize_augmentations(image, num_samples=5):
         
         for aug_name, _ in augmentations:
             f.write(f"## {aug_name} Augmentation\n")
-            f.write(f"![{aug_name}]({aug_name.lower()}_samples.png)\n\n") 
+            f.write(f"![{aug_name}]({aug_name.lower()}_samples.png)\n\n")
+    
+    print("Augmentation visualization completed successfully.")
+    

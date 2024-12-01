@@ -47,21 +47,15 @@ jobs:
     - name: Generate augmentation visualizations
       env:
         SKIP_VIZ: 0
+        PYTHONPATH: ${PYTHONPATH}:${GITHUB_WORKSPACE}
       run: |
         echo "Generating augmentation visualizations..."
-        python -c "
-        import torch
-        from torchvision import datasets, transforms
-        from utils.augmentation_viz import visualize_augmentations
-        
-        # Get sample image
-        transform = transforms.ToTensor()
-        dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-        sample_image = dataset[0][0]
-        
-        # Generate visualizations
-        visualize_augmentations(sample_image, num_samples=5)
-        "
+        # Create required directories
+        mkdir -p visualizations/augmentations
+        # Run augmentation script
+        python utils/generate_augmentations.py
+        # Verify files were created
+        ls -la visualizations/augmentations/
         echo "Augmentation visualizations completed."
     
     - name: Train model
