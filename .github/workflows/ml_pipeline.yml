@@ -52,6 +52,7 @@ jobs:
         echo "Starting model training..."
         python train.py
         echo "Training completed."
+        echo "TRAINED_MODEL_PATH=$(ls -t models/*.pth | head -1)" >> $GITHUB_ENV
     
     - name: Run tests
       env:
@@ -60,6 +61,7 @@ jobs:
         SKIP_VIZ: 1
       run: |
         echo "Running model tests..."
+        echo "Using model: $TRAINED_MODEL_PATH"
         pytest tests/test_model.py -v -s
         echo "Testing completed."
     

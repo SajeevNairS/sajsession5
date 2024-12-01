@@ -77,13 +77,24 @@ def generate_test_summary(param_count, accuracy, class_accuracies):
 
 def test_model():
     """Run model verification tests"""
+    print("\nRunning Model Verification Tests")
+    print("================================")
+    
     # Parameter count test
     model = MNISTNet()
     param_count = count_parameters(model)
     
-    # Accuracy test
-    save_path = train()
-    model.load_state_dict(torch.load(save_path))
+    # Load trained model
+    model_path = os.environ.get('TRAINED_MODEL_PATH')
+    if not model_path:
+        print("No model path provided, searching in models directory...")
+        model_files = glob.glob('models/*.pth')
+        if not model_files:
+            raise FileNotFoundError("No trained model found!")
+        model_path = max(model_files, key=os.path.getctime)
+    
+    print(f"Using model: {model_path}")
+    model.load_state_dict(torch.load(model_path))
     model.eval()
     
     # Test dataset setup
