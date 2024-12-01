@@ -4,6 +4,7 @@ import torch
 import pytest
 from torchvision import datasets, transforms
 import base64
+from pathlib import Path
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -105,8 +106,22 @@ def test_model():
     print("\nRunning Model Verification Tests")
     print("================================")
     
-    # Generate augmentation samples
+    # Ensure directories exist
+    os.makedirs('visualizations/augmentations', exist_ok=True)
+    
+    # Generate augmentation samples first
+    print("\nGenerating augmentation samples...")
     generate_augmentation_samples()
+    
+    # Verify augmentations were generated
+    if not os.path.exists('visualizations/augmentations/README.md'):
+        raise FileNotFoundError("Augmentation README.md not generated!")
+    
+    png_files = list(Path('visualizations/augmentations').rglob('*.png'))
+    if not png_files:
+        raise FileNotFoundError("No augmentation images were generated!")
+    
+    print(f"Generated {len(png_files)} augmentation images")
     
     # Parameter count test
     model = MNISTNet()

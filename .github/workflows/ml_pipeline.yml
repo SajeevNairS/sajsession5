@@ -35,7 +35,7 @@ jobs:
         pip install numpy matplotlib pytest pytest-md
         # Install visualization tools
         sudo apt-get update
-        sudo apt-get install -y graphviz
+        sudo apt-get install -y graphviz tree
         pip install graphviz torchviz
     
     - name: Create directories
@@ -50,13 +50,30 @@ jobs:
         PYTHONPATH: ${GITHUB_WORKSPACE}
       run: |
         echo "Generating augmentation visualizations..."
+        # Create directories
         mkdir -p visualizations/augmentations
+        
+        # Generate augmentations
         python -c "
+        import matplotlib
+        matplotlib.use('Agg')  # Set non-interactive backend
         from tests.test_model import generate_augmentation_samples
         generate_augmentation_samples()
         "
-        echo "Augmentations generated in visualizations/augmentations/"
-        ls -R visualizations/augmentations/
+        
+        # List generated files
+        echo "Generated files:"
+        tree visualizations/augmentations/
+        
+        # Verify files exist
+        if [ ! -f "visualizations/augmentations/README.md" ]; then
+          echo "Error: README.md not generated!"
+          exit 1
+        fi
+        
+        # Count PNG files
+        png_count=$(find visualizations/augmentations -name "*.png" | wc -l)
+        echo "Generated ${png_count} image files"
     
     - name: Train model
       env:
@@ -87,20 +104,24 @@ jobs:
         # Add augmentation section
         if [ -d "visualizations/augmentations" ]; then
           echo "### Data Augmentations" >> $GITHUB_STEP_SUMMARY
-          echo "Augmented images are saved in the following structure:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Generated files:" >> $GITHUB_STEP_SUMMARY
           tree visualizations/augmentations >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           
-          # Include main augmentation README
+          # Include main augmentation README if it exists
           if [ -f "visualizations/augmentations/README.md" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Augmentation Details" >> $GITHUB_STEP_SUMMARY
             cat visualizations/augmentations/README.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Warning: README.md not found in augmentations directory" >> $GITHUB_STEP_SUMMARY
           fi
-        fi
-        
-        if [ -f "test-summary.md" ]; then
-          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
-          cat test-summary.md >> $GITHUB_STEP_SUMMARY
+          
+          # Count generated files
+          png_count=$(find visualizations/augmentations -name "*.png" | wc -l)
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Total generated images: ${png_count}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Warning: No augmentation directory found" >> $GITHUB_STEP_SUMMARY
         fi
     
     - name: Upload artifacts
@@ -110,10 +131,9 @@ jobs:
         name: ml-pipeline-artifacts
         path: |
           models/
-          visualizations/
+          visualizations/augmentations/
+          visualizations/augmentations/**/*
           test-summary.md
-          visualizations/augmentations/**/*.png
-          visualizations/augmentations/**/*.md
     
     - name: Verify requirements
       run: |
