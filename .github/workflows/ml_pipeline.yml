@@ -47,16 +47,46 @@ jobs:
     - name: Generate augmentation visualizations
       env:
         SKIP_VIZ: 0
-        PYTHONPATH: ${PYTHONPATH}:${GITHUB_WORKSPACE}
+        PYTHONPATH: ${GITHUB_WORKSPACE}
       run: |
         echo "Generating augmentation visualizations..."
         # Create required directories
         mkdir -p visualizations/augmentations
-        # Run augmentation script
-        python utils/generate_augmentations.py
-        # Verify files were created
-        ls -la visualizations/augmentations/
-        echo "Augmentation visualizations completed."
+        mkdir -p visualizations/augmented_samples
+        
+        # Run visualization script
+        python -c "
+        import torch
+        from torchvision import datasets, transforms
+        from utils.augmentation_viz import visualize_augmentations
+        
+        # Get sample images
+        transform = transforms.ToTensor()
+        dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+        
+        # Get samples of different digits (0-9)
+        samples = []
+        labels = []
+        seen_digits = set()
+        
+        for img, label in dataset:
+            if label.item() not in seen_digits:
+                samples.append(img)
+                labels.append(label)
+                seen_digits.add(label.item())
+                if len(seen_digits) == 5:  # Get 5 different digits
+                    break
+        
+        # Generate visualizations for each sample
+        for idx, (img, label) in enumerate(zip(samples, labels)):
+            print(f'Generating augmentations for digit {label}...')
+            visualize_augmentations(img, num_samples=5, digit=label.item())
+        "
+        
+        # List generated files
+        echo "Generated files:"
+        ls -R visualizations/augmentations/
+        ls -R visualizations/augmented_samples/
     
     - name: Train model
       env:
