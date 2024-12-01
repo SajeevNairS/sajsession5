@@ -176,17 +176,31 @@ def test_model():
 
 def generate_augmentation_samples():
     """Generate augmentation samples for visualization"""
-    import base64
-    from utils.augmentation_viz import visualize_augmentations
-    
-    # Create directories
+    # Create main augmentations directory
     os.makedirs('visualizations/augmentations', exist_ok=True)
+    
+    # Create main README
+    with open('visualizations/augmentations/README.md', 'w') as f:
+        f.write("# MNIST Data Augmentation Examples\n\n")
+        f.write("This directory contains examples of data augmentation applied to MNIST digits.\n\n")
+        f.write("## Directory Structure\n")
+        f.write("```\n")
+        f.write("augmentations/\n")
+        f.write("├── digit_0/         # Augmentations for digit 0\n")
+        f.write("├── digit_1/         # Augmentations for digit 1\n")
+        f.write("└── digit_2/         # Augmentations for digit 2\n")
+        f.write("```\n\n")
+        f.write("Each digit folder contains:\n")
+        f.write("- Original image\n")
+        f.write("- Grid of augmented samples\n")
+        f.write("- Individual augmented samples\n")
+        f.write("- README with embedded images\n\n")
     
     # Get sample images
     transform = transforms.ToTensor()
     dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
     
-    # Get samples of different digits (0-9)
+    # Get samples of different digits
     samples = []
     labels = []
     seen_digits = set()
@@ -202,6 +216,11 @@ def generate_augmentation_samples():
     # Generate visualizations for each sample
     for idx, (img, label) in enumerate(zip(samples, labels)):
         visualize_augmentations(img, num_samples=5, digit=label)
+        
+        # Add link to main README
+        with open('visualizations/augmentations/README.md', 'a') as f:
+            f.write(f"## Digit {label}\n")
+            f.write(f"See [detailed augmentations for digit {label}](digit_{label}/README.md)\n\n")
 
 if __name__ == "__main__":
     test_model()
