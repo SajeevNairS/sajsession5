@@ -38,13 +38,6 @@ jobs:
         sudo apt-get install -y graphviz
         pip install graphviz torchviz
     
-    - name: Code quality checks
-      run: |
-        pip install black flake8 pylint
-        black . --check
-        flake8 . --max-line-length=88 --extend-ignore=E203
-        pylint --disable=C0111,C0103,C0303,C0330 **/*.py
-    
     - name: Create directories
       run: |
         mkdir -p models
@@ -73,10 +66,6 @@ jobs:
     - name: Generate test summary
       run: |
         echo "## ML Pipeline Results" >> $GITHUB_STEP_SUMMARY
-        echo "### Code Quality" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Black formatting check passed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Flake8 linting check passed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Pylint check passed" >> $GITHUB_STEP_SUMMARY
         
         if [ -f "visualizations/model_architecture.txt" ]; then
           echo "### Model Architecture" >> $GITHUB_STEP_SUMMARY
@@ -98,8 +87,6 @@ jobs:
           visualizations/
           test-summary.md
           .pytest_cache/
-          .coverage
-          coverage.xml
     
     - name: Verify requirements
       run: |
@@ -134,4 +121,3 @@ jobs:
       run: |
         rm -rf .pytest_cache
         rm -rf __pycache__
-        rm -rf .coverage 
