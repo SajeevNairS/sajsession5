@@ -42,12 +42,33 @@ jobs:
       run: |
         mkdir -p models
         mkdir -p visualizations
+        mkdir -p visualizations/augmentations
+    
+    - name: Generate augmentation visualizations
+      env:
+        SKIP_VIZ: 0
+      run: |
+        echo "Generating augmentation visualizations..."
+        python -c "
+        import torch
+        from torchvision import datasets, transforms
+        from utils.augmentation_viz import visualize_augmentations
+        
+        # Get sample image
+        transform = transforms.ToTensor()
+        dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+        sample_image = dataset[0][0]
+        
+        # Generate visualizations
+        visualize_augmentations(sample_image, num_samples=5)
+        "
+        echo "Augmentation visualizations completed."
     
     - name: Train model
       env:
         CUDA_VISIBLE_DEVICES: ""
         TORCH_DEVICE: "cpu"
-        SKIP_VIZ: 1
+        SKIP_VIZ: 1  # Skip visualization during training
       run: |
         echo "Starting model training..."
         python train.py

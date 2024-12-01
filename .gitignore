@@ -38,6 +38,7 @@ MNIST/
 checkpoints/
 runs/
 logs/
+QNA_5/
 
 # IDE
 .idea/
