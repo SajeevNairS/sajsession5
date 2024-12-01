@@ -5,6 +5,12 @@ import pytest
 from torchvision import datasets, transforms
 import base64
 from pathlib import Path
+import glob
+import torch.optim as optim
+import numpy as np
+from torch.optim.lr_scheduler import OneCycleLR
+from PIL import Image
+import torchvision.transforms.functional as F
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -104,11 +110,17 @@ def generate_test_summary(param_count, accuracy, class_accuracies):
 
 def test_model():
     """Run model verification tests"""
+    # Force CPU
+    device = torch.device('cpu')
+    torch.set_num_threads(1)  # Use single thread for consistency
+    
     print("\nRunning Model Verification Tests")
     print("================================")
+    print(f"Using device: {device}")
     
     # Ensure directories exist
     os.makedirs('visualizations/augmentations', exist_ok=True)
+    os.makedirs('models', exist_ok=True)
     
     # Generate augmentation samples first
     print("\nGenerating augmentation samples...")
@@ -134,8 +146,11 @@ def test_model():
         print("No model path provided, searching in models directory...")
         model_files = glob.glob('models/*.pth')
         if not model_files:
-            raise FileNotFoundError("No trained model found!")
-        model_path = max(model_files, key=os.path.getctime)
+            print("No trained model found, training new model...")
+            model_path = train()
+        else:
+            model_path = max(model_files, key=os.path.getctime)
+            print(f"Found existing model: {model_path}")
     
     print(f"Using model: {model_path}")
     model.load_state_dict(torch.load(model_path))
@@ -247,6 +262,132 @@ def generate_augmentation_samples():
             f.write(f"See [detailed augmentations for digit {label}](digit_{label}/README.md)\n")
     
     print("\nAugmentation generation completed.")
+
+def test_lr_scheduler():
+    """Test OneCycleLR scheduler behavior"""
+    model = MNISTNet()
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    
+    # Create a small dummy dataloader for testing
+    batch_size = 4
+    n_batches = 10
+    total_steps = n_batches
+    
+    scheduler = OneCycleLR(
+        optimizer,
+        max_lr=0.1,
+        epochs=1,
+        steps_per_epoch=n_batches,
+        pct_start=0.25,
+        div_factor=10,
+        final_div_factor=100
+    )
+    
+    # Track learning rates
+    lrs = []
+    for _ in range(total_steps):
+        lrs.append(optimizer.param_groups[0]['lr'])
+        scheduler.step()
+    
+    # Verify learning rate behavior
+    assert lrs[0] < lrs[n_batches//4], "LR should increase during warmup"
+    assert lrs[n_batches//4] > lrs[-1], "LR should decrease after warmup"
+    assert max(lrs) <= 0.1, "Max LR should not exceed specified max_lr"
+    print(f"\nLR Schedule Test: Peak LR = {max(lrs):.4f}")
+
+def test_augmentation_consistency():
+    """Test that augmentations maintain digit recognizability"""
+    # Force CPU
+    device = torch.device('cpu')
+    
+    # Define transforms
+    to_tensor = transforms.ToTensor()
+    to_pil = transforms.ToPILImage()
+    augment = transforms.Compose([
+        transforms.RandomRotation(degrees=5),
+        transforms.RandomAffine(degrees=5, translate=(0.05, 0.05), scale=(0.95, 1.05))
+    ])
+    
+    # Load model and sample image
+    model = MNISTNet().to(device)
+    model_path = os.environ.get('TRAINED_MODEL_PATH')
+    if not model_path:
+        model_files = glob.glob('models/*.pth')
+        if not model_files:
+            model_path = train()
+        else:
+            model_path = max(model_files, key=os.path.getctime)
+    
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+    
+    # Get a sample image
+    dataset = datasets.MNIST('./data', train=False, download=True, transform=to_tensor)
+    sample_tensor, original_label = dataset[0]
+    
+    # Convert to PIL for augmentations
+    sample_pil = to_pil(sample_tensor)
+    
+    # Test multiple augmentations
+    n_augmentations = 10
+    correct_predictions = 0
+    
+    with torch.no_grad():
+        for _ in range(n_augmentations):
+            # Apply augmentations to PIL Image
+            augmented_pil = augment(sample_pil)
+            # Convert back to tensor for model
+            augmented_tensor = to_tensor(augmented_pil).unsqueeze(0)
+            
+            output = model(augmented_tensor)
+            pred = output.argmax(dim=1).item()
+            correct_predictions += (pred == original_label)
+    
+    accuracy = correct_predictions / n_augmentations
+    print(f"\nAugmentation Consistency: {accuracy*100:.1f}% correct predictions")
+    assert accuracy >= 0.7, "Model should maintain >70% accuracy on augmented images"
+
+def test_noise_robustness():
+    """Test model's robustness to input noise"""
+    # Force CPU
+    device = torch.device('cpu')
+    
+    model = MNISTNet().to(device)
+    model_path = os.environ.get('TRAINED_MODEL_PATH')
+    if not model_path:
+        model_files = glob.glob('models/*.pth')
+        if not model_files:
+            model_path = train()
+        else:
+            model_path = max(model_files, key=os.path.getctime)
+    
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+    
+    # Get test sample
+    dataset = datasets.MNIST('./data', train=False, download=True, transform=transforms.ToTensor())
+    image, label = dataset[0]
+    
+    # Test different noise levels
+    noise_levels = [0.1, 0.2, 0.3]
+    results = []
+    
+    with torch.no_grad():
+        # Get baseline prediction
+        baseline_output = model(image.unsqueeze(0))
+        baseline_pred = baseline_output.argmax(dim=1).item()
+        
+        # Test with different noise levels
+        for noise_level in noise_levels:
+            noise = torch.randn_like(image) * noise_level
+            noisy_image = torch.clamp(image + noise, 0, 1)
+            output = model(noisy_image.unsqueeze(0))
+            pred = output.argmax(dim=1).item()
+            results.append(pred == baseline_pred)
+    
+    # Model should be robust to at least the lowest noise level
+    assert results[0], f"Model should be robust to {noise_levels[0]} noise level"
+    print(f"\nNoise Robustness: Maintained prediction up to {max([l for l, r in zip(noise_levels, results) if r])} noise level")
 
 if __name__ == "__main__":
     test_model()

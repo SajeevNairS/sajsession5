@@ -35,65 +35,18 @@ jobs:
         pip install numpy matplotlib pytest pytest-md
         # Install visualization tools
         sudo apt-get update
-        sudo apt-get install -y graphviz tree
-        pip install graphviz torchviz
+        sudo apt-get install -y graphviz
+        pip install graphviz
     
     - name: Create directories
       run: |
         mkdir -p models
         mkdir -p visualizations
-        mkdir -p visualizations/augmentations
     
-    - name: Generate augmentation visualizations
-      env:
-        SKIP_VIZ: 0
-        PYTHONPATH: ${GITHUB_WORKSPACE}
-      run: |
-        echo "Generating augmentation visualizations..."
-        
-        # Ensure directories exist
-        mkdir -p visualizations/augmentations
-        
-        # Generate augmentations with debug output
-        python -c "
-        import os
-        import matplotlib
-        matplotlib.use('Agg')
-        from tests.test_model import generate_augmentation_samples
-        
-        print('Current working directory:', os.getcwd())
-        print('Contents before generation:', os.listdir('visualizations/augmentations'))
-        
-        generate_augmentation_samples()
-        
-        print('\nContents after generation:', os.listdir('visualizations/augmentations'))
-        for root, dirs, files in os.walk('visualizations/augmentations'):
-            print(f'\nDirectory: {root}')
-            print('Files:', files)
-        "
-        
-        # Display generated files
-        echo "\nGenerated files structure:"
-        find visualizations/augmentations -type f -ls
-        
-        # Create summary of generated files
-        echo "\nCreating augmentation summary..."
-        echo "# Generated Augmentation Files" > augmentation_files.md
-        find visualizations/augmentations -type f | sort >> augmentation_files.md
-
-    - name: Upload augmentation artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: augmentation-images
-        path: |
-          visualizations/augmentations/**/*
-          augmentation_files.md
-
     - name: Train model
       env:
         CUDA_VISIBLE_DEVICES: ""
         TORCH_DEVICE: "cpu"
-        SKIP_VIZ: 1  # Skip visualization during training
       run: |
         echo "Starting model training..."
         python train.py
@@ -104,7 +57,6 @@ jobs:
       env:
         CUDA_VISIBLE_DEVICES: ""
         TORCH_DEVICE: "cpu"
-        SKIP_VIZ: 1
       run: |
         echo "Running model tests..."
         echo "Using model: $TRAINED_MODEL_PATH"
@@ -115,18 +67,8 @@ jobs:
       run: |
         echo "## ML Pipeline Results" >> $GITHUB_STEP_SUMMARY
         
-        echo "### Data Augmentations" >> $GITHUB_STEP_SUMMARY
-        if [ -f "augmentation_files.md" ]; then
-          cat augmentation_files.md >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -f "visualizations/augmentations/README.md" ]; then
-          echo "\n### Augmentation Details" >> $GITHUB_STEP_SUMMARY
-          cat visualizations/augmentations/README.md >> $GITHUB_STEP_SUMMARY
-        fi
-        
         if [ -f "test-summary.md" ]; then
-          echo "\n### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
           cat test-summary.md >> $GITHUB_STEP_SUMMARY
         fi
     
@@ -137,8 +79,7 @@ jobs:
         name: ml-pipeline-artifacts
         path: |
           models/
-          visualizations/augmentations/
-          visualizations/augmentations/**/*
+          visualizations/
           test-summary.md
     
     - name: Verify requirements
