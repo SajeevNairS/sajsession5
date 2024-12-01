@@ -3,6 +3,7 @@ import os
 import torch
 import pytest
 from torchvision import datasets, transforms
+import base64
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -53,8 +54,28 @@ def generate_test_summary(param_count, accuracy, class_accuracies):
     status = "✅ PASSED" if accuracy >= 95.0 else "❌ FAILED"
     summary.append(f"- **Status:** {status}\n")
     
+    # Data Augmentation Section
+    summary.append("## Data Augmentation Examples")
+    
+    # Link to augmentation images
+    if os.path.exists('visualizations/augmentations'):
+        summary.append("\n### Original and Augmented Samples")
+        summary.append("Location: `visualizations/augmentations/`\n")
+        
+        # List all augmentation images
+        for img_file in sorted(os.listdir('visualizations/augmentations')):
+            if img_file.endswith('.png'):
+                img_name = img_file.replace('.png', '').replace('_', ' ').title()
+                summary.append(f"- {img_name}")
+                
+                # If we're in GitHub Actions, embed the image using base64
+                if os.environ.get('GITHUB_ACTIONS') == 'true':
+                    with open(f'visualizations/augmentations/{img_file}', 'rb') as img:
+                        img_data = base64.b64encode(img.read()).decode()
+                        summary.append(f"\n<img src='data:image/png;base64,{img_data}' width='600'>\n")
+    
     # Per-Class Accuracy
-    summary.append("## Per-Class Performance")
+    summary.append("\n## Per-Class Performance")
     summary.append("| Digit | Accuracy | Status |")
     summary.append("|-------|----------|---------|")
     for digit, acc in class_accuracies.items():
@@ -79,6 +100,9 @@ def test_model():
     """Run model verification tests"""
     print("\nRunning Model Verification Tests")
     print("================================")
+    
+    # Generate augmentation samples
+    generate_augmentation_samples()
     
     # Parameter count test
     model = MNISTNet()
@@ -149,6 +173,35 @@ def test_model():
     # Assertions
     assert param_count < 25000, f"Parameter count {param_count:,} exceeds limit of 25,000"
     assert accuracy >= 95.0, f"Accuracy {accuracy:.2f}% below target of 95%"
+
+def generate_augmentation_samples():
+    """Generate augmentation samples for visualization"""
+    import base64
+    from utils.augmentation_viz import visualize_augmentations
+    
+    # Create directories
+    os.makedirs('visualizations/augmentations', exist_ok=True)
+    
+    # Get sample images
+    transform = transforms.ToTensor()
+    dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+    
+    # Get samples of different digits (0-9)
+    samples = []
+    labels = []
+    seen_digits = set()
+    
+    for img, label in dataset:
+        if label.item() not in seen_digits:
+            samples.append(img)
+            labels.append(label)
+            seen_digits.add(label.item())
+            if len(seen_digits) == 3:  # Get 3 different digits
+                break
+    
+    # Generate visualizations for each sample
+    for idx, (img, label) in enumerate(zip(samples, labels)):
+        visualize_augmentations(img, num_samples=5, digit=label.item())
 
 if __name__ == "__main__":
     test_model()
