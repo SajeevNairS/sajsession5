@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from model.mnist_model import MNISTNet
 from train import train
+from utils.augmentation_viz import visualize_augmentations
 
 def count_parameters(model):
     """Count trainable parameters in the model"""
