@@ -51,40 +51,44 @@ jobs:
       run: |
         echo "Generating augmentation visualizations..."
         
-        # Debug Python environment
-        echo "Python version:"
-        python --version
-        echo "Python path:"
-        echo $PYTHONPATH
-        echo "Current directory:"
-        pwd
-        echo "Directory contents:"
-        ls -la
-        
         # Create Python script for augmentations
         cat > generate_augmentations.py << 'EOF'
         import os
         import sys
         import torch
         import matplotlib
-        matplotlib.use('Agg')  # Use non-interactive backend
+        matplotlib.use('Agg')
+        import base64
         from torchvision import datasets, transforms
         from utils.augmentation_viz import visualize_augmentations
 
         def main():
             try:
-                # Setup directories
                 os.makedirs('visualizations/augmentations', exist_ok=True)
-                os.makedirs('visualizations/augmented_samples', exist_ok=True)
                 
-                # Get one sample image
+                # Get sample image
                 transform = transforms.ToTensor()
                 dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-                sample_image = dataset[0][0]  # Just get the first image
+                sample_image = dataset[0][0]
                 
-                # Generate visualization for one digit
-                print(f"Generating augmentations for sample digit...")
+                # Generate visualizations
+                print("Generating augmentations...")
                 visualize_augmentations(sample_image, num_samples=5, digit=0)
+                
+                # Create markdown with embedded images
+                with open('visualizations/augmentations/summary.md', 'w') as f:
+                    f.write("# Data Augmentation Examples\n\n")
+                    
+                    # List all generated images
+                    for img_file in sorted(os.listdir('visualizations/augmentations')):
+                        if img_file.endswith('.png'):
+                            # Read image and convert to base64
+                            with open(f'visualizations/augmentations/{img_file}', 'rb') as img:
+                                img_data = base64.b64encode(img.read()).decode()
+                            
+                            # Write to markdown with embedded image
+                            f.write(f"## {img_file.replace('.png', '').replace('_', ' ').title()}\n")
+                            f.write(f"<img src='data:image/png;base64,{img_data}' width='600'>\n\n")
                 
                 return 0
                 
@@ -99,18 +103,7 @@ jobs:
         EOF
         
         # Run the script
-        echo "Running augmentation script..."
         python generate_augmentations.py
-        
-        # Check results
-        echo "Checking generated files..."
-        find visualizations -type f -ls
-
-        # Display any error logs
-        if [ -f "error.log" ]; then
-          echo "Error log contents:"
-          cat error.log
-        fi
     
     - name: Train model
       env:
@@ -138,9 +131,9 @@ jobs:
       run: |
         echo "## ML Pipeline Results" >> $GITHUB_STEP_SUMMARY
         
-        if [ -f "visualizations/augmentations/README.md" ]; then
+        if [ -f "visualizations/augmentations/summary.md" ]; then
           echo "### Data Augmentation" >> $GITHUB_STEP_SUMMARY
-          cat visualizations/augmentations/README.md >> $GITHUB_STEP_SUMMARY
+          cat visualizations/augmentations/summary.md >> $GITHUB_STEP_SUMMARY
         fi
         
         if [ -f "visualizations/model_architecture.txt" ]; then
