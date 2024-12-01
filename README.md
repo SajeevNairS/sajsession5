@@ -133,5 +133,12 @@ cat test-summary.md
 - Training time: Single CPU
 - Full test results in test-summary.md
 
+## Data Augmentation
+
+Augmented samples are available in:
+- `visualizations/augmentations/` - Contains augmented images and documentation
+- Individual digit folders with original and augmented samples
+- See [augmentation examples](visualizations/augmentations/README.md)
+
 
 

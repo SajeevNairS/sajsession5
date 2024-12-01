@@ -50,60 +50,13 @@ jobs:
         PYTHONPATH: ${GITHUB_WORKSPACE}
       run: |
         echo "Generating augmentation visualizations..."
-        
-        # Create Python script for augmentations
-        cat > generate_augmentations.py << 'EOF'
-        import os
-        import sys
-        import torch
-        import matplotlib
-        matplotlib.use('Agg')
-        import base64
-        from torchvision import datasets, transforms
-        from utils.augmentation_viz import visualize_augmentations
-
-        def main():
-            try:
-                os.makedirs('visualizations/augmentations', exist_ok=True)
-                
-                # Get sample image
-                transform = transforms.ToTensor()
-                dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-                sample_image = dataset[0][0]
-                
-                # Generate visualizations
-                print("Generating augmentations...")
-                visualize_augmentations(sample_image, num_samples=5, digit=0)
-                
-                # Create markdown with embedded images
-                with open('visualizations/augmentations/summary.md', 'w') as f:
-                    f.write("# Data Augmentation Examples\n\n")
-                    
-                    # List all generated images
-                    for img_file in sorted(os.listdir('visualizations/augmentations')):
-                        if img_file.endswith('.png'):
-                            # Read image and convert to base64
-                            with open(f'visualizations/augmentations/{img_file}', 'rb') as img:
-                                img_data = base64.b64encode(img.read()).decode()
-                            
-                            # Write to markdown with embedded image
-                            f.write(f"## {img_file.replace('.png', '').replace('_', ' ').title()}\n")
-                            f.write(f"<img src='data:image/png;base64,{img_data}' width='600'>\n\n")
-                
-                return 0
-                
-            except Exception as e:
-                print(f"Error occurred: {str(e)}", file=sys.stderr)
-                import traceback
-                traceback.print_exc()
-                return 1
-
-        if __name__ == "__main__":
-            sys.exit(main())
-        EOF
-        
-        # Run the script
-        python generate_augmentations.py
+        mkdir -p visualizations/augmentations
+        python -c "
+        from tests.test_model import generate_augmentation_samples
+        generate_augmentation_samples()
+        "
+        echo "Augmentations generated in visualizations/augmentations/"
+        ls -R visualizations/augmentations/
     
     - name: Train model
       env:
@@ -131,14 +84,18 @@ jobs:
       run: |
         echo "## ML Pipeline Results" >> $GITHUB_STEP_SUMMARY
         
-        if [ -f "visualizations/augmentations/summary.md" ]; then
-          echo "### Data Augmentation" >> $GITHUB_STEP_SUMMARY
-          cat visualizations/augmentations/summary.md >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -f "visualizations/model_architecture.txt" ]; then
-          echo "### Model Architecture" >> $GITHUB_STEP_SUMMARY
-          cat visualizations/model_architecture.txt >> $GITHUB_STEP_SUMMARY
+        # Add augmentation section
+        if [ -d "visualizations/augmentations" ]; then
+          echo "### Data Augmentations" >> $GITHUB_STEP_SUMMARY
+          echo "Augmented images are saved in the following structure:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tree visualizations/augmentations >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+          # Include main augmentation README
+          if [ -f "visualizations/augmentations/README.md" ]; then
+            cat visualizations/augmentations/README.md >> $GITHUB_STEP_SUMMARY
+          fi
         fi
         
         if [ -f "test-summary.md" ]; then
@@ -154,9 +111,9 @@ jobs:
         path: |
           models/
           visualizations/
-          visualizations/augmentations/
           test-summary.md
-          .pytest_cache/
+          visualizations/augmentations/**/*.png
+          visualizations/augmentations/**/*.md
     
     - name: Verify requirements
       run: |

@@ -39,6 +39,29 @@ def generate_test_summary(param_count, accuracy, class_accuracies):
     summary = []
     summary.append("# MNIST Model Test Results\n")
     
+    # Data Augmentation Section
+    summary.append("## Data Augmentation Examples\n")
+    if os.path.exists('visualizations/augmentations'):
+        summary.append("### Sample Augmentations\n")
+        
+        # Add links to per-digit folders
+        for digit_folder in sorted(os.listdir('visualizations/augmentations')):
+            if digit_folder.startswith('digit_'):
+                digit = digit_folder.split('_')[1]
+                summary.append(f"#### Digit {digit}\n")
+                
+                # Original image
+                if os.path.exists(f'visualizations/augmentations/{digit_folder}/original.png'):
+                    summary.append("Original:")
+                    summary.append(f"![Original](augmentations/{digit_folder}/original.png)\n")
+                
+                # Grid images
+                for aug_type in ['rotation', 'affine', 'combined']:
+                    grid_path = f'visualizations/augmentations/{digit_folder}/{aug_type}_grid.png'
+                    if os.path.exists(grid_path):
+                        summary.append(f"{aug_type.title()} Augmentations:")
+                        summary.append(f"![{aug_type}](augmentations/{digit_folder}/{aug_type}_grid.png)\n")
+    
     # Parameter Count Section
     summary.append("## Parameter Count Check")
     summary.append(f"- **Target:** < 25,000 parameters")
@@ -54,26 +77,6 @@ def generate_test_summary(param_count, accuracy, class_accuracies):
     summary.append(f"- **Margin:** {accuracy - 95.0:+.2f}%")
     status = "✅ PASSED" if accuracy >= 95.0 else "❌ FAILED"
     summary.append(f"- **Status:** {status}\n")
-    
-    # Data Augmentation Section
-    summary.append("## Data Augmentation Examples")
-    
-    # Link to augmentation images
-    if os.path.exists('visualizations/augmentations'):
-        summary.append("\n### Original and Augmented Samples")
-        summary.append("Location: `visualizations/augmentations/`\n")
-        
-        # List all augmentation images
-        for img_file in sorted(os.listdir('visualizations/augmentations')):
-            if img_file.endswith('.png'):
-                img_name = img_file.replace('.png', '').replace('_', ' ').title()
-                summary.append(f"- {img_name}")
-                
-                # If we're in GitHub Actions, embed the image using base64
-                if os.environ.get('GITHUB_ACTIONS') == 'true':
-                    with open(f'visualizations/augmentations/{img_file}', 'rb') as img:
-                        img_data = base64.b64encode(img.read()).decode()
-                        summary.append(f"\n<img src='data:image/png;base64,{img_data}' width='600'>\n")
     
     # Per-Class Accuracy
     summary.append("\n## Per-Class Performance")
