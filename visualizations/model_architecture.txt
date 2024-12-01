@@ -1,0 +1,51 @@
+MNIST Model Architecture
+======================
+
+Input Layer: (1, 28, 28)
+↓
+
+conv1: 3x3, 1->4 channels
+Parameters: 40
+↓
+
+conv2: 3x3, 4->8 channels
+Parameters: 296
+↓
+
+conv3: 3x3, 8->12 channels
+Parameters: 876
+↓
+
+conv4: 3x3, 12->16 channels
+Parameters: 1,744
+↓
+pool4: kernel=2, stride=2
+↓
+
+conv5: 3x3, 16->20 channels
+Parameters: 2,900
+↓
+pool5: kernel=2, stride=2
+↓
+
+conv6: 3x3, 20->24 channels
+Parameters: 4,344
+↓
+pool6: kernel=2, stride=2
+↓
+
+conv7: 3x3, 24->28 channels
+Parameters: 6,076
+↓
+pool7: kernel=2, stride=2
+↓
+
+fc1: 28 -> 56
+Parameters: 1,624
+↓
+
+fc2: 56 -> 10
+Parameters: 570
+↓
+
+Total Parameters: 18,694

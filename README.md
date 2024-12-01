@@ -1,145 +1,103 @@
-# MNIST Classification with CI/CD Pipeline
+# MNIST Digit Classification with Lightweight CNN
 
-This project demonstrates a complete CI/CD pipeline for a machine learning project using PyTorch and GitHub Actions. It includes a lightweight convolutional neural network (CNN) for MNIST digit classification with automated testing, model validation, and deployment processes.
-
-## Project Structure
-
-.
-├── .github/
-│ └── workflows/
-│ └── ml-pipeline.yml # CI/CD pipeline configuration
-├── model/
-│ ├── init.py
-│ └── mnist_model.py # Neural network architecture
-├── tests/
-│ └── test_model.py # Model validation tests
-├── train.py # Training script
-├── requirements.txt # Project dependencies
-└── .gitignore # Git ignore rules
-
-
+A PyTorch implementation of a lightweight CNN for MNIST digit classification, optimized to achieve >95% accuracy in one epoch with under 25,000 parameters.
 
 ## Model Architecture
-The model is an efficient CNN with the following architecture:
-- Input Layer: 28x28 grayscale images
-- Conv Layer 1: 32 filters, 5x5 kernel, BatchNorm, ReLU, MaxPool
-- Conv Layer 2: 64 filters, 3x3 kernel, BatchNorm, ReLU, MaxPool with Residual Connection
-- Conv Layer 3: 32 filters, 3x3 kernel, BatchNorm, ReLU, MaxPool
-- Fully Connected Layers: 
-  - FC1: 288 -> 128 units, ReLU
-  - FC2: 128 -> 10 units
-- Residual Connection: 1x1 conv projection (32->64 channels)
-- Dropout: 0.15 for regularization
 
-Total Parameters: ~24,000 (under 25,000 parameter limit)
+### Network Design
+- Progressive channel expansion: 1 → 4 → 8 → 12 → 16 → 20 → 24 → 28
+- Multi-stage spatial reduction through pooling layers
+- GELU activation for better gradient flow
+- BatchNorm for training stability
+- Dropout for regularization
 
-## Features
-- Single epoch training targeting >95% accuracy
-- Model validation checks:
-  - Input shape verification (28x28)
-  - Parameter count validation (<25,000)
-  - Output dimension check (10 classes)
-  - Model accuracy verification
-- Residual learning for better gradient flow
-- Automated model versioning with timestamps and accuracy
-- CPU-only PyTorch for wider compatibility
-- GitHub Actions integration for CI/CD
+### Layer Structure
+1. **Input Layer**: 1×28×28 grayscale images
+2. **Convolutional Blocks**:
+   - Conv1: Basic edge detection (3×3 kernel, 1→4 channels)
+   - Conv2: Simple pattern detection (3×3 kernel, 4→8 channels)
+   - Conv3: Pattern combinations (3×3 kernel, 8→12 channels)
+   - Conv4: Initial feature aggregation (3×3 kernel, 12→16 channels)
+   - Conv5: Mid-level features (3×3 kernel, 16→20 channels)
+   - Conv6: High-level features (3×3 kernel, 20→24 channels)
+   - Conv7: Global features (3×3 kernel, 24→28 channels)
+3. **Spatial Reduction**: 28×28 → 14×14 → 7×7 → 4×4 → 2×2
+4. **Classification Head**: 28 → 56 → 10
 
-## Training Details
-- Batch Size: 32
-- Optimizer: Adam (lr=0.002)
-- Learning Rate Scheduler: CosineAnnealingWarmRestarts
-- Data Augmentation:
-  - Random Rotation (5 degrees)
-  - Random Affine Translation (5%)
-  - Normalization (mean=0.1307, std=0.3081)
+### Receptive Field
+- Progressive growth through layers
+- Final receptive field: 31×31 (covers entire input)
+- Layer-wise RF growth:
+  * Conv1: 3×3
+  * Conv2: 5×5
+  * Conv3: 7×7
+  * Conv4 + Pool4: 11×11
+  * Conv5 + Pool5: 15×15
+  * Conv6 + Pool6: 23×23
+  * Conv7 + Pool7: 31×31
 
-## Setup and Installation
+## Training Setup
 
-### Prerequisites
-- Python 3.8 or higher
-- Git
+### Data Preprocessing
 
-### Local Development
-1. Clone the repository:
+### Training Configuration
+- Optimizer: SGD with momentum
+  * Learning rate: 0.001
+  * Momentum: 0.9
+- Batch size: 4
+- One Cycle LR Schedule:
+  * Max LR: 0.1
+  * Warmup: 25% of training
+  * Cosine annealing
+- Gradient clipping: 1.0
 
-bash
-git clone https://github.com/yourusername/your-repo-name.git
-cd your-repo-name
+### Model Features
+- Total Parameters: < 25,000
+- Efficient feature extraction
+- Progressive spatial reduction
+- Balanced parameter distribution
+- Light regularization (Dropout 0.15)
 
+## Visualization Tools
+The project includes tools for:
+1. Model architecture visualization
+2. Feature map visualization
+3. Training progress tracking
+4. Parameter count display
 
-2. Create and activate a virtual environment:
+## Usage
 
-bash
-On Unix/macOS
-python -m venv venv
-source venv/bin/activate
-On Windows
-python -m venv venv
-venv\Scripts\activate
-
-
-3. Install dependencies:
-
-bash
+```bash
+# Install dependencies
 pip install -r requirements.txt
 
-
-4. Train the model:
-
-bash
+# Train model
 python train.py
+```
 
-You'll see progress updates showing:
-- Current batch number
-- Loss value
-- Running accuracy
-- Final training accuracy
+## Project Structure
+```
+.
+├── model/
+│   └── mnist_model.py     # Model architecture
+├── visualizations/        # Generated visualizations
+├── train.py              # Training script
+├── requirements.txt      # Dependencies
+└── README.md            # Documentation
+```
 
-5. Run tests:
+## Requirements
+- torch
+- torchvision
+- numpy
+- matplotlib
+- Python 3.6+
 
-bash
-pytest tests/
-
-
-### GitHub Actions Pipeline
-The CI/CD pipeline automatically runs on every push to the repository and performs:
-1. Environment setup with Python 3.8
-2. Installation of CPU-only PyTorch dependencies
-3. Single epoch model training
-4. Validation tests
-5. Model artifact storage
-
-## Model Artifacts
-Trained models are saved with timestamps and accuracy in the format:
-
-mnist_model_YYYYMMDD_HHMMSS_acc{accuracy}.pth
-
-These can be found in:
-- `models/` directory (local training)
-- GitHub Actions artifacts (pipeline runs)
+## Results
+- Target: >95% accuracy in one epoch
+- Parameters: ~24,000
+- Training time: Single CPU
+```
 
 
-## Testing
-The automated tests verify:
-- Model architecture compliance
-- Input/output shape compatibility
-- Parameter count (<25,000)
-- Model performance (>80% accuracy)
-
-## Troubleshooting
-- If you encounter import errors, ensure you're in the project root directory
-- For memory issues, reduce batch size in `train.py` (currently 32)
-- All PyTorch operations run on CPU by default
-
-## License
-MIT License
-
-## Acknowledgments
-- MNIST Dataset: [MNIST Database](http://yann.lecun.com/exdb/mnist/)
-- PyTorch: [https://pytorch.org/](https://pytorch.org/)
-- GitHub Actions for CI/CD automation
-
-## Contact
-For questions or feedback, please open an issue in the GitHub repository.
 
