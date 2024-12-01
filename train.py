@@ -113,18 +113,24 @@ def visualize_model():
     # Create model instance
     model = MNISTNet()
     
+    # Check if visualization should be skipped
+    SKIP_VIZ = os.environ.get('SKIP_VIZ', '0') == '1'
+    
     # Clean up old visualizations
     import shutil
     if os.path.exists('visualizations'):
         shutil.rmtree('visualizations')
     os.makedirs('visualizations')
     
-    # Create model architecture visualization if torchviz is available
-    if TORCHVIZ_AVAILABLE:
-        x = torch.randn(1, 1, 28, 28)
-        y = model(x)
-        dot = torchviz.make_dot(y, params=dict(model.named_parameters()))
-        dot.render('visualizations/model_architecture', format='png', cleanup=True)
+    # Create model architecture visualization if not skipped
+    if TORCHVIZ_AVAILABLE and not SKIP_VIZ:
+        try:
+            x = torch.randn(1, 1, 28, 28)
+            y = model(x)
+            dot = torchviz.make_dot(y, params=dict(model.named_parameters()))
+            dot.render('visualizations/model_architecture', format='png', cleanup=True)
+        except Exception as e:
+            print(f"Warning: Could not generate visualization: {e}")
     
     # Calculate and display total parameters
     total_params = sum(p.numel() for p in model.parameters())
