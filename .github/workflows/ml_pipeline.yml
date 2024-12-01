@@ -1,0 +1,137 @@
+name: ML Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Install CPU-only PyTorch
+        pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+        # Install other dependencies
+        pip install numpy matplotlib pytest pytest-md
+        # Install visualization tools
+        sudo apt-get update
+        sudo apt-get install -y graphviz
+        pip install graphviz torchviz
+    
+    - name: Code quality checks
+      run: |
+        pip install black flake8 pylint
+        black . --check
+        flake8 . --max-line-length=88 --extend-ignore=E203
+        pylint --disable=C0111,C0103,C0303,C0330 **/*.py
+    
+    - name: Create directories
+      run: |
+        mkdir -p models
+        mkdir -p visualizations
+    
+    - name: Train model
+      env:
+        CUDA_VISIBLE_DEVICES: ""
+        TORCH_DEVICE: "cpu"
+        SKIP_VIZ: 1
+      run: |
+        echo "Starting model training..."
+        python train.py
+        echo "Training completed."
+    
+    - name: Run tests
+      env:
+        CUDA_VISIBLE_DEVICES: ""
+        TORCH_DEVICE: "cpu"
+        SKIP_VIZ: 1
+      run: |
+        echo "Running model tests..."
+        pytest tests/test_model.py -v -s
+        echo "Testing completed."
+    
+    - name: Generate test summary
+      run: |
+        echo "## ML Pipeline Results" >> $GITHUB_STEP_SUMMARY
+        echo "### Code Quality" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Black formatting check passed" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Flake8 linting check passed" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Pylint check passed" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "visualizations/model_architecture.txt" ]; then
+          echo "### Model Architecture" >> $GITHUB_STEP_SUMMARY
+          cat visualizations/model_architecture.txt >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "test-summary.md" ]; then
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          cat test-summary.md >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ml-pipeline-artifacts
+        path: |
+          models/
+          visualizations/
+          test-summary.md
+          .pytest_cache/
+          .coverage
+          coverage.xml
+    
+    - name: Verify requirements
+      run: |
+        echo "Checking model requirements..."
+        
+        # Check parameter count
+        if [ -f "visualizations/model_architecture.txt" ]; then
+          PARAM_COUNT=$(grep "Total Parameters:" visualizations/model_architecture.txt | awk '{print $3}' | tr -d ',')
+          if [ "$PARAM_COUNT" -gt 25000 ]; then
+            echo "❌ Parameter count ($PARAM_COUNT) exceeds limit of 25,000"
+            exit 1
+          else
+            echo "✅ Parameter count ($PARAM_COUNT) within limit"
+          fi
+        fi
+        
+        # Check accuracy
+        if [ -f "test-summary.md" ]; then
+          if grep -q "FAILED" test-summary.md; then
+            echo "❌ Model tests failed!"
+            exit 1
+          else
+            echo "✅ All model tests passed"
+          fi
+        else
+          echo "❌ Test summary not found"
+          exit 1
+        fi
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf .pytest_cache
+        rm -rf __pycache__
+        rm -rf .coverage 
