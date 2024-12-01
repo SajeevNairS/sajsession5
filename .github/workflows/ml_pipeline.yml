@@ -69,6 +69,11 @@ jobs:
       run: |
         echo "## ML Pipeline Results" >> $GITHUB_STEP_SUMMARY
         
+        if [ -f "visualizations/augmentations/README.md" ]; then
+          echo "### Data Augmentation" >> $GITHUB_STEP_SUMMARY
+          cat visualizations/augmentations/README.md >> $GITHUB_STEP_SUMMARY
+        fi
+        
         if [ -f "visualizations/model_architecture.txt" ]; then
           echo "### Model Architecture" >> $GITHUB_STEP_SUMMARY
           cat visualizations/model_architecture.txt >> $GITHUB_STEP_SUMMARY
@@ -87,6 +92,7 @@ jobs:
         path: |
           models/
           visualizations/
+          visualizations/augmentations/
           test-summary.md
           .pytest_cache/
     

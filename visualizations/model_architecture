@@ -1,0 +1,59 @@
+digraph MNIST_Model {
+	rankdir=TB splines=ortho
+	node [fontname=Arial margin="0.3,0.1" shape=box style="rounded,filled"]
+	subgraph cluster_0 {
+		label="Feature Extraction"
+		input [label="Input
+(1, 28, 28)" fillcolor=lightblue]
+		conv1 [label="Conv1
+1→4 channels
+3×3 kernel" fillcolor=lightgreen]
+		pool1 [label="MaxPool2d
+28→14" fillcolor=lightyellow]
+		conv2 [label="Conv2
+4→8 channels
+3×3 kernel" fillcolor=lightgreen]
+		pool2 [label="MaxPool2d
+14→7" fillcolor=lightyellow]
+		conv3 [label="Conv3
+8→12 channels
+3×3 kernel" fillcolor=lightgreen]
+		pool3 [label="MaxPool2d
+7→3" fillcolor=lightyellow]
+		conv4 [label="Conv4
+12→16 channels
+3×3 kernel" fillcolor=lightgreen]
+		pool4 [label="MaxPool2d
+3→2" fillcolor=lightyellow]
+	}
+	subgraph cluster_1 {
+		label=Classification
+		flatten [label="Flatten
+→28" fillcolor=lightpink]
+		fc1 [label="Dense
+28→56" fillcolor=lightpink]
+		dropout [label="Dropout
+0.15" fillcolor=lightgray]
+		fc2 [label="Dense
+56→10" fillcolor=lightpink]
+		output [label="Output
+10 classes" fillcolor=lightblue]
+	}
+	input -> conv1
+	conv1 -> pool1
+	pool1 -> conv2
+	conv2 -> pool2
+	pool2 -> conv3
+	conv3 -> pool3
+	pool3 -> conv4
+	conv4 -> pool4
+	pool4 -> flatten
+	flatten -> fc1
+	fc1 -> dropout
+	dropout -> fc2
+	fc2 -> output
+	fontname="Arial Bold" fontsize=16 label="
+MNIST CNN Architecture
+Parameters: 18,694 | RF: 31×31
+" labelloc=t
+}

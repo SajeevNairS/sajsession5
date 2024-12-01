@@ -14,6 +14,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from model.mnist_model import MNISTNet
 from datetime import datetime
+from utils.augmentation_viz import visualize_augmentations
 
 # Optional imports
 try:
@@ -121,6 +122,18 @@ def visualize_model():
     if os.path.exists('visualizations'):
         shutil.rmtree('visualizations')
     os.makedirs('visualizations')
+    os.makedirs('visualizations/augmentations', exist_ok=True)
+    
+    # Get a sample image for augmentation visualization
+    transform = transforms.ToTensor()
+    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+    sample_image = train_dataset[0][0]
+    
+    # Visualize augmentations if not skipped
+    if not SKIP_VIZ:
+        print("\nGenerating augmentation visualizations...")
+        visualize_augmentations(sample_image, num_samples=5)
+        print("Augmentation visualizations saved in visualizations/augmentations/")
     
     # Create model architecture visualization if not skipped
     if TORCHVIZ_AVAILABLE and not SKIP_VIZ:
