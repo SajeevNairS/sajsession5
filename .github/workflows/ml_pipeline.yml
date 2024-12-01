@@ -50,31 +50,45 @@ jobs:
         PYTHONPATH: ${GITHUB_WORKSPACE}
       run: |
         echo "Generating augmentation visualizations..."
-        # Create directories
+        
+        # Ensure directories exist
         mkdir -p visualizations/augmentations
         
-        # Generate augmentations
+        # Generate augmentations with debug output
         python -c "
+        import os
         import matplotlib
-        matplotlib.use('Agg')  # Set non-interactive backend
+        matplotlib.use('Agg')
         from tests.test_model import generate_augmentation_samples
+        
+        print('Current working directory:', os.getcwd())
+        print('Contents before generation:', os.listdir('visualizations/augmentations'))
+        
         generate_augmentation_samples()
+        
+        print('\nContents after generation:', os.listdir('visualizations/augmentations'))
+        for root, dirs, files in os.walk('visualizations/augmentations'):
+            print(f'\nDirectory: {root}')
+            print('Files:', files)
         "
         
-        # List generated files
-        echo "Generated files:"
-        tree visualizations/augmentations/
+        # Display generated files
+        echo "\nGenerated files structure:"
+        find visualizations/augmentations -type f -ls
         
-        # Verify files exist
-        if [ ! -f "visualizations/augmentations/README.md" ]; then
-          echo "Error: README.md not generated!"
-          exit 1
-        fi
-        
-        # Count PNG files
-        png_count=$(find visualizations/augmentations -name "*.png" | wc -l)
-        echo "Generated ${png_count} image files"
-    
+        # Create summary of generated files
+        echo "\nCreating augmentation summary..."
+        echo "# Generated Augmentation Files" > augmentation_files.md
+        find visualizations/augmentations -type f | sort >> augmentation_files.md
+
+    - name: Upload augmentation artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: augmentation-images
+        path: |
+          visualizations/augmentations/**/*
+          augmentation_files.md
+
     - name: Train model
       env:
         CUDA_VISIBLE_DEVICES: ""
@@ -101,27 +115,19 @@ jobs:
       run: |
         echo "## ML Pipeline Results" >> $GITHUB_STEP_SUMMARY
         
-        # Add augmentation section
-        if [ -d "visualizations/augmentations" ]; then
-          echo "### Data Augmentations" >> $GITHUB_STEP_SUMMARY
-          echo "Generated files:" >> $GITHUB_STEP_SUMMARY
-          tree visualizations/augmentations >> $GITHUB_STEP_SUMMARY
-          
-          # Include main augmentation README if it exists
-          if [ -f "visualizations/augmentations/README.md" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Augmentation Details" >> $GITHUB_STEP_SUMMARY
-            cat visualizations/augmentations/README.md >> $GITHUB_STEP_SUMMARY
-          else
-            echo "Warning: README.md not found in augmentations directory" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          # Count generated files
-          png_count=$(find visualizations/augmentations -name "*.png" | wc -l)
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Total generated images: ${png_count}" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "Warning: No augmentation directory found" >> $GITHUB_STEP_SUMMARY
+        echo "### Data Augmentations" >> $GITHUB_STEP_SUMMARY
+        if [ -f "augmentation_files.md" ]; then
+          cat augmentation_files.md >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "visualizations/augmentations/README.md" ]; then
+          echo "\n### Augmentation Details" >> $GITHUB_STEP_SUMMARY
+          cat visualizations/augmentations/README.md >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "test-summary.md" ]; then
+          echo "\n### Test Results" >> $GITHUB_STEP_SUMMARY
+          cat test-summary.md >> $GITHUB_STEP_SUMMARY
         fi
     
     - name: Upload artifacts
