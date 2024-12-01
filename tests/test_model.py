@@ -192,16 +192,16 @@ def generate_augmentation_samples():
     seen_digits = set()
     
     for img, label in dataset:
-        if label.item() not in seen_digits:
+        if label not in seen_digits:
             samples.append(img)
             labels.append(label)
-            seen_digits.add(label.item())
+            seen_digits.add(label)
             if len(seen_digits) == 3:  # Get 3 different digits
                 break
     
     # Generate visualizations for each sample
     for idx, (img, label) in enumerate(zip(samples, labels)):
-        visualize_augmentations(img, num_samples=5, digit=label.item())
+        visualize_augmentations(img, num_samples=5, digit=label)
 
 if __name__ == "__main__":
     test_model()
