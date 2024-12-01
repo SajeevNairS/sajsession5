@@ -1,65 +1,43 @@
 # MNIST Model Test Results
 
-## Data Augmentation Examples
+## Model Performance Tests
 
-### Sample Augmentations
-
-#### Digit 0
-
-Original:
-![Original](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_0/original.png)
-
-Rotation Augmentations:
-![rotation](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_0/rotation_grid.png)
-
-Affine Augmentations:
-![affine](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_0/affine_grid.png)
-
-Combined Augmentations:
-![combined](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_0/combined_grid.png)
-
-#### Digit 4
-
-Original:
-![Original](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_4/original.png)
-
-Rotation Augmentations:
-![rotation](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_4/rotation_grid.png)
-
-Affine Augmentations:
-![affine](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_4/affine_grid.png)
-
-Combined Augmentations:
-![combined](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_4/combined_grid.png)
-
-#### Digit 5
-
-Original:
-![Original](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_5/original.png)
-
-Rotation Augmentations:
-![rotation](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_5/rotation_grid.png)
-
-Affine Augmentations:
-![affine](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_5/affine_grid.png)
-
-Combined Augmentations:
-![combined](https://github.com/SajeevNairS/sajsession5/raw/main/visualizations/augmentations/digit_5/combined_grid.png)
-
-## Parameter Count Check
+### Parameter Count Check
 - **Target:** < 25,000 parameters
 - **Actual:** 18,694 parameters
 - **Margin:** 6,306 parameters remaining
 - **Status:** ✅ PASSED
 
-## Accuracy Check
+### Accuracy Check
 - **Target:** ≥ 95.00%
 - **Actual:** 98.90%
 - **Margin:** +3.90%
 - **Status:** ✅ PASSED
 
+### Learning Rate Schedule Test
+- **Target:** Proper warmup and decay behavior
+- **Peak LR:** 0.1000
+- **Warmup Behavior:** ✅ Verified
+- **Decay Behavior:** ✅ Verified
+- **Status:** ✅ PASSED
+
+### Augmentation Consistency Test
+- **Target:** > 70% accuracy on augmented images
+- **Actual:** 90.0% correct predictions
+- **Augmentations Tested:**
+  * Random Rotation (±5°)
+  * Random Affine (translation, scale)
+  * Combined transforms
+- **Status:** ✅ PASSED
+
+### Noise Robustness Test
+- **Target:** Maintain prediction at 0.1 noise level
+- **Noise Levels Tested:** [0.1, 0.2, 0.3]
+- **Max Tolerated Level:** 0.2
+- **Status:** ✅ PASSED
 
 ## Per-Class Performance
+
 | Digit | Accuracy | Status |
 |-------|----------|---------|
 | 0 | 99.49% | ✅ |
@@ -75,3 +53,9 @@ Combined Augmentations:
 
 ## Overall Status
 ✅ **ALL CHECKS PASSED**
+
+### Test Summary
+- Base Model Tests: ✅ PASSED
+- Augmentation Tests: ✅ PASSED
+- Robustness Tests: ✅ PASSED
+- Performance Metrics: ✅ PASSED
