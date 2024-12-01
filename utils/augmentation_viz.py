@@ -21,48 +21,49 @@ def visualize_augmentations(image, num_samples=5, digit=None):
             ]))
         ]
         
-        # Save original image
+        # Save original image with relative path for GitHub
         plt.figure(figsize=(4, 4))
         plt.imshow(image.squeeze(), cmap='gray')
         plt.title(f'Original Digit {digit}')
         plt.axis('off')
-        plt.savefig(f'{digit_folder}/original.png', bbox_inches='tight', dpi=150, facecolor='white')
+        orig_path = f'{digit_str}/original.png'
+        plt.savefig(f'visualizations/augmentations/{orig_path}', bbox_inches='tight', dpi=150, facecolor='white')
         plt.close()
         
         # Create a summary markdown for this digit
         with open(f'{digit_folder}/README.md', 'w') as f:
             f.write(f"# Augmentations for Digit {digit}\n\n")
             f.write("## Original Image\n")
-            f.write("![Original](original.png)\n\n")
+            f.write(f"![Original]({orig_path})\n\n")
         
         # Generate augmented samples
         for aug_name, aug_transform in augmentations:
-            # Create a grid of augmented samples
             fig = plt.figure(figsize=(15, 3))
             fig.suptitle(f'{aug_name} Augmentations', y=1.05)
             
-            augmented_samples = []
             for i in range(num_samples):
                 plt.subplot(1, num_samples, i+1)
                 augmented = aug_transform(image)
-                augmented_samples.append(augmented)
                 plt.imshow(augmented.squeeze(), cmap='gray')
                 plt.title(f'Sample {i+1}')
                 plt.axis('off')
                 
-                # Save individual samples
+                # Save individual samples with relative paths
+                sample_path = f'{digit_str}/{aug_name.lower()}_sample_{i+1}.png'
                 plt.imsave(
-                    f'{digit_folder}/{aug_name.lower()}_sample_{i+1}.png',
+                    f'visualizations/augmentations/{sample_path}',
                     augmented.squeeze().numpy(),
                     cmap='gray'
                 )
             
+            # Save grid with relative path
+            grid_path = f'{digit_str}/{aug_name.lower()}_grid.png'
             plt.tight_layout()
-            plt.savefig(f'{digit_folder}/{aug_name.lower()}_grid.png',
+            plt.savefig(f'visualizations/augmentations/{grid_path}',
                        bbox_inches='tight', dpi=150, facecolor='white')
             plt.close()
             
-            # Add to digit's README
+            # Add to digit's README with relative paths
             with open(f'{digit_folder}/README.md', 'a') as f:
                 f.write(f"\n## {aug_name} Augmentation\n")
                 f.write(f"![{aug_name} Grid]({aug_name.lower()}_grid.png)\n\n")

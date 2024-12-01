@@ -51,17 +51,18 @@ def generate_test_summary(param_count, accuracy, class_accuracies):
                 digit = digit_folder.split('_')[1]
                 summary.append(f"#### Digit {digit}\n")
                 
-                # Original image
-                if os.path.exists(f'visualizations/augmentations/{digit_folder}/original.png'):
+                # Original image with GitHub path
+                orig_path = f"visualizations/augmentations/{digit_folder}/original.png"
+                if os.path.exists(orig_path):
                     summary.append("Original:")
-                    summary.append(f"![Original](augmentations/{digit_folder}/original.png)\n")
+                    summary.append(f"![Original](https://github.com/SajeevNairS/sajsession5/raw/main/{orig_path})\n")
                 
-                # Grid images
+                # Grid images with GitHub paths
                 for aug_type in ['rotation', 'affine', 'combined']:
-                    grid_path = f'visualizations/augmentations/{digit_folder}/{aug_type}_grid.png'
+                    grid_path = f"visualizations/augmentations/{digit_folder}/{aug_type}_grid.png"
                     if os.path.exists(grid_path):
                         summary.append(f"{aug_type.title()} Augmentations:")
-                        summary.append(f"![{aug_type}](augmentations/{digit_folder}/{aug_type}_grid.png)\n")
+                        summary.append(f"![{aug_type}](https://github.com/SajeevNairS/sajsession5/raw/main/{grid_path})\n")
     
     # Parameter Count Section
     summary.append("## Parameter Count Check")
