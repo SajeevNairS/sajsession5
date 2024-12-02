@@ -1,5 +1,10 @@
 # MNIST Digit Classification with Lightweight CNN
 
+[![ML Pipeline](https://github.com/SajeevNairS/sajsession5/actions/workflows/ml_pipeline.yml/badge.svg)](https://github.com/SajeevNairS/sajsession5/actions/workflows/ml_pipeline.yml)
+![Python](https://img.shields.io/badge/python-3.8-blue.svg)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.0-red.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 A PyTorch implementation of a lightweight CNN for MNIST digit classification, optimized to achieve >95% accuracy in one epoch with under 25,000 parameters.
 
 ## Model Architecture
