@@ -24,18 +24,25 @@ A PyTorch implementation of a lightweight CNN for MNIST digit classification, op
 3. **Spatial Reduction**: 28×28 → 14×14 → 7×7 → 4×4 → 2×2
 4. **Classification Head**: 28 → 56 → 10
 
-### Receptive Field
-- Progressive growth through layers
-- Final receptive field: 31×31 (covers entire input)
-- Layer-wise RF growth documented in model architecture
-
 ## Training Setup
 
-### Data Preprocessing
+### Data Augmentation
+The model uses robust data augmentation techniques:
+- Random rotation (±5°)
+- Random affine transformations:
+  * Translation: ±5% of image size
+  * Scale: 95-105% of original size
+- Combined transformations for increased robustness
+
 ```python
 transform = transforms.Compose([
     transforms.Resize((28, 28)),
     transforms.RandomRotation(degrees=5),
+    transforms.RandomAffine(
+        degrees=5,
+        translate=(0.05, 0.05),
+        scale=(0.95, 1.05)
+    ),
     transforms.ToTensor(),
     transforms.Normalize((0.1307,), (0.3081,))
 ])
@@ -52,39 +59,31 @@ transform = transforms.Compose([
   * Cosine annealing
 - Gradient clipping: 1.0
 
-## Testing and Verification
+## Model Testing
 
 ### Automated Tests
-The project includes automated tests to verify:
-1. Parameter count (< 25,000)
-2. Model accuracy (≥ 95%)
-3. Model architecture
-4. Per-class performance
+The project includes comprehensive tests:
+1. **Parameter Count**: Verifies model size < 25,000 parameters
+2. **Accuracy Test**: Ensures ≥95% accuracy on test set
+3. **Learning Rate Schedule Test**: Validates proper LR behavior
+4. **Augmentation Consistency Test**: Checks robustness to transformations
+5. **Noise Robustness Test**: Verifies stability under input noise
 
-### Running Tests Locally
+### Test Results
+- Parameters: 18,694 (well under 25K limit)
+- Base Accuracy: 98.90%
+- Augmentation Consistency: 90.0%
+- Noise Tolerance: Up to 0.2 noise level
+- Per-class Accuracy: >97.8% for all digits
+
+### Running Tests
 ```bash
 # Run all tests
-python tests/test_model.py
+pytest tests/test_model.py -v
 
-# Run with pytest
-pytest tests/test_model.py -v -s
-
-# View test summary
-cat test-summary.md
+# Run specific test
+pytest tests/test_model.py -k "test_augmentation_consistency" -v
 ```
-
-### Test Artifacts
-- test-summary.md: Detailed test results
-- visualizations/: Feature maps and model architecture
-- models/: Saved model checkpoints
-
-### GitHub Actions
-Automated CI/CD pipeline that:
-- Verifies parameter count
-- Checks model accuracy
-- Generates test summary
-- Posts results as PR comments
-- Saves test artifacts
 
 ## Project Structure
 ```
@@ -92,7 +91,10 @@ Automated CI/CD pipeline that:
 ├── model/
 │   └── mnist_model.py     # Model architecture
 ├── tests/
-│   └── test_model.py      # Test suite
+│   └── test_model.py      # Comprehensive test suite
+├── utils/
+│   ├── augmentation_viz.py  # Augmentation visualization
+│   └── generate_samples.py  # Sample generation
 ├── visualizations/        # Generated visualizations
 ├── train.py              # Training script
 ├── requirements.txt      # Dependencies
@@ -100,12 +102,12 @@ Automated CI/CD pipeline that:
 ```
 
 ## Requirements
-- torch
+- torch (CPU version)
 - torchvision
 - numpy
 - matplotlib
 - pytest
-- Python 3.6+
+- Python 3.8+
 
 ## Usage
 
@@ -120,25 +122,32 @@ python train.py
 
 ### Testing
 ```bash
-# Run tests
+# Run all tests
 python tests/test_model.py
+
+# Generate augmentation samples
+python utils/generate_samples.py
 
 # View results
 cat test-summary.md
 ```
 
-## Results
-- Parameters: 18,694 (under 25K limit)
-- Accuracy: >95% in one epoch
-- Training time: Single CPU
-- Full test results in test-summary.md
+## CI/CD Pipeline
+The project includes a GitHub Actions workflow that:
+1. Trains the model on CPU
+2. Runs comprehensive test suite
+3. Verifies model requirements
+4. Generates test summary
+5. Saves artifacts and visualizations
 
-## Data Augmentation
+## Results Summary
+- Parameters: 18,694 (25.2% below limit)
+- Accuracy: 98.90% (+3.90% above target)
+- Training: Single epoch on CPU
+- Augmentation: 90.0% consistency
+- Robustness: Tolerates up to 0.2 noise level
 
-Augmented samples are available in:
-- `visualizations/augmentations/` - Contains augmented images and documentation
-- Individual digit folders with original and augmented samples
-- See [augmentation examples](visualizations/augmentations/README.md)
+For detailed test results and visualizations, see [test-summary.md](test-summary.md).
 
 
 
